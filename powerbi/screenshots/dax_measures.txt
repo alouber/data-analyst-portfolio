@@ -1,0 +1,162 @@
+-- ============================================
+-- MESURES PRINCIPALES
+-- ============================================
+
+-- Revenue Total
+Total Revenue = SUMX(order_items, order_items[price])
+
+-- Nombre de Commandes
+Total Orders = DISTINCTCOUNT(orders[order_id])
+
+-- Nombre de Clients
+Total Customers = DISTINCTCOUNT(orders[customer_id])
+
+-- Nombre de Produits Vendus
+Total Products Sold = SUM(order_items[order_item_id])
+
+-- ============================================
+-- MESURES CALCULÉES
+-- ============================================
+
+-- AOV (Average Order Value)
+AOV = DIVIDE([Total Revenue], [Total Orders], 0)
+
+-- Revenue par Client
+Revenue per Customer = DIVIDE([Total Revenue], [Total Customers], 0)
+
+-- Panier Moyen (items par commande)
+Avg Items per Order = DIVIDE([Total Products Sold], [Total Orders], 0)
+
+-- ============================================
+-- TIME INTELLIGENCE
+-- ============================================
+
+-- Revenue Mois Précédent
+Revenue PM = 
+CALCULATE(
+    [Total Revenue],
+    DATEADD(Calendar[Date], -1, MONTH)
+)
+
+-- Croissance MoM %
+Revenue Growth MoM % = 
+DIVIDE(
+    [Total Revenue] - [Revenue PM],
+    [Revenue PM],
+    0
+)
+
+-- Revenue YTD
+Revenue YTD = 
+TOTALYTD([Total Revenue], Calendar[Date])
+
+-- Revenue Année Précédente
+Revenue PY = 
+CALCULATE(
+    [Total Revenue],
+    SAMEPERIODLASTYEAR(Calendar[Date])
+)
+
+-- Croissance YoY %
+Revenue Growth YoY % = 
+DIVIDE(
+    [Total Revenue] - [Revenue PY],
+    [Revenue PY],
+    0
+)
+
+-- ============================================
+-- INDICATEURS AVANCÉS
+-- ============================================
+
+-- Taux de Livraison à Temps
+On-Time Delivery Rate = 
+DIVIDE(
+    CALCULATE(COUNT(orders[order_id]), orders[delivery_delay] <= 0),
+    COUNT(orders[order_id]),
+    0
+)
+
+-- CLV (Customer Lifetime Value) Simplifié
+CLV = 
+DIVIDE(
+    [Total Revenue],
+    [Total Customers],
+    0
+)
+
+-- Taux de Clients Récurrents
+Repeat Customer Rate = 
+VAR CustomersWithMultipleOrders = 
+    CALCULATE(
+        DISTINCTCOUNT(orders[customer_id]),
+        FILTER(
+            VALUES(orders[customer_id]),
+            CALCULATE(DISTINCTCOUNT(orders[order_id])) > 1
+        )
+    )
+RETURN
+    DIVIDE(CustomersWithMultipleOrders, [Total Customers], 0)
+
+-- Marge Brute (si on a le coût)
+Gross Margin = [Total Revenue] * 0.40  -- Supposer 40% marge
+
+-- ============================================
+-- SEGMENTATION
+-- ============================================
+
+-- Nombre de Champions
+Champions Count = 
+CALCULATE(
+    DISTINCTCOUNT(customer_rfm_segments[customer_id]),
+    customer_rfm_segments[segment] = "Champions"
+)
+
+-- Revenue par Segment
+Revenue by Segment = 
+CALCULATE(
+    [Total Revenue],
+    USERELATIONSHIP(orders[customer_id], customer_rfm_segments[customer_id])
+)
+
+-- ============================================
+-- ANALYSE PRODUITS
+-- ============================================
+
+-- Top 10 Produits
+Top 10 Products = 
+IF(
+    RANKX(
+        ALL(products[product_id]),
+        [Total Revenue],
+        ,
+        DESC,
+        DENSE
+    ) <= 10,
+    [Total Revenue],
+    BLANK()
+)
+
+-- Part de Marché Catégorie
+Category Market Share = 
+DIVIDE(
+    [Total Revenue],
+    CALCULATE([Total Revenue], ALL(products[category_fashion])),
+    0
+)
+
+-- ============================================
+-- FILTRES DYNAMIQUES
+-- ============================================
+
+-- Titre Dynamique
+Dynamic Title = 
+"Total Revenue: " & FORMAT([Total Revenue], "#,##0") & " R$"
+
+-- Période Sélectionnée
+Selected Period = 
+IF(
+    ISFILTERED(Calendar[Date]),
+    "Custom Period",
+    "All Time"
+)
