@@ -26,10 +26,8 @@
    # Edit .env with your database credentials
 ```
 
-5. Run the application:
-```bash
-   python app.py
-```
+5. Run the code
+
 
 ## Environment Variables
 
