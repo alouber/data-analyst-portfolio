@@ -8,7 +8,13 @@
    pip install -r requirements.txt
 ```
 
-3. Set up your database:
+3. Get the dataset:
+```bash
+   # Download the following dataset 
+   https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
+```
+
+4. Set up your database:
 ```bash
    # Create PostgreSQL database
    createdb nordic_fashion_bi
